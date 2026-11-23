@@ -1,4 +1,5 @@
 import { listRequests, createRequest } from "../../../lib/store";
+import { validateNewRequest } from "../../../lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,7 @@ export async function GET() {
   }
 }
 
-// POST /api/requests — save a new request.
-// Full validation rules are added in build step 3.
+// POST /api/requests — validate and save a new request.
 export async function POST(request) {
   try {
     let body;
@@ -29,14 +29,12 @@ export async function POST(request) {
       );
     }
 
-    const clean = (value) => (typeof value === "string" ? value.trim() : "");
+    const { error, value } = validateNewRequest(body);
+    if (error) {
+      return Response.json({ error }, { status: 400 });
+    }
 
-    const saved = createRequest({
-      requester_name: clean(body?.requester_name),
-      location: clean(body?.location),
-      description: clean(body?.description),
-      priority: clean(body?.priority),
-    });
+    const saved = createRequest(value);
 
     return Response.json({ request: saved }, { status: 201 });
   } catch (error) {
